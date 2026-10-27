@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DishUp Menu Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        brand: { 50:'#fff7ed',100:'#ffedd5',200:'#fed7aa',400:'#fb923c',500:'#f97316',600:'#ea580c',700:'#c2410c' }
+      }}}
+    }
+  </script>
+  <style>
+    .fade-in { animation: fadeIn .2s ease }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+    .spinner { border:3px solid #fed7aa;border-top-color:#f97316;border-radius:50%;width:22px;height:22px;animation:spin .7s linear infinite;display:inline-block }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .badge { display:inline-flex;align-items:center;padding:2px 9px;border-radius:9999px;font-size:.68rem;font-weight:600;letter-spacing:.04em;white-space:nowrap }
+    .chat-msg { max-width:80% }
+    .prose-sm p { margin-bottom:.4em }
+    .prose-sm strong { font-weight:600 }
+    pre { white-space:pre-wrap;word-break:break-word }
+    ::-webkit-scrollbar { width:5px } ::-webkit-scrollbar-thumb { background:#e5e7eb;border-radius:9px }
+  </style>
+</head>
+<body class="h-full bg-gray-50 font-sans text-gray-800 antialiased">
+
+<!-- ═══ NAVBAR ════════════════════════════════════════════════════════════════ -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-2">
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="text-2xl">&#x1F371;</span>
+      <span class="font-bold text-base tracking-tight">DishUp <span class="text-brand-500">Menu Intelligence</span></span>
+    </div>
+    <div class="flex items-center gap-1 text-sm overflow-x-auto">
+      <button onclick="setTab('dashboard')" id="tab-dashboard" class="tab-btn px-3 py-1.5 rounded-full font-medium transition-colors border border-transparent whitespace-nowrap">Dashboard</button>
+      <button onclick="setTab('upload')"    id="tab-upload"    class="tab-btn px-3 py-1.5 rounded-full font-medium transition-colors border border-transparent whitespace-nowrap">Upload Menu</button>
+      <button onclick="setTab('products')"  id="tab-products"  class="tab-btn px-3 py-1.5 rounded-full font-medium transition-colors border border-transparent whitespace-nowrap">Produk</button>
+      <button onclick="setTab('chat')"      id="tab-chat"      class="tab-btn px-3 py-1.5 rounded-full font-medium transition-colors border border-transparent whitespace-nowrap">Chatbot</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ TOAST ════════════════════════════════════════════════════════════════ -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 hidden max-w-xs"></div>
+
+<!-- ═══ MAIN ════════════════════════════════════════════════════════════════ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-7">
+
+<!-- ══ TAB: DASHBOARD ════════════════════════════════════════════════════════ -->
+<section id="section-dashboard" class="tab-section fade-in">
+  <h2 class="text-xl font-bold mb-5">Dashboard</h2>
+
+  <!-- Stat cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center text-xl">&#x1F37D;&#xFE0F;</div>
+      <div><div class="text-2xl font-bold" id="stat-total">—</div><div class="text-xs text-gray-500">Total Produk</div></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-amber-200 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-xl">&#x26A0;&#xFE0F;</div>
+      <div><div class="text-2xl font-bold text-amber-600" id="stat-review">—</div><div class="text-xs text-gray-500">Needs Review</div></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-xl">&#x1F3EA;</div>
+      <div><div class="text-2xl font-bold" id="stat-sellers">—</div><div class="text-xs text-gray-500">Seller</div></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-xl">&#x1F4C4;</div>
+      <div><div class="text-2xl font-bold" id="stat-uploads">—</div><div class="text-xs text-gray-500">Upload Diproses</div></div>
+    </div>
+  </div>
+
+  <!-- Needs-review alert -->
+  <div id="review-alert" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 mb-6 flex items-start gap-3">
+    <span class="text-2xl mt-0.5">&#x26A0;&#xFE0F;</span>
+    <div>
+      <p class="font-semibold text-amber-800">Ada produk yang perlu diverifikasi</p>
+      <p class="text-sm text-amber-700 mt-0.5"><span id="review-count">0</span> produk berstatus <strong>needs_review</strong> — bahan, harga, atau jadwal PO belum lengkap. <button onclick="setTab('products');filterStatus('needs_review')" class="underline font-medium">Lihat produk</button></p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+    <!-- Category chart -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-4">
+      <h3 class="font-semibold text-sm text-gray-600 mb-3">Produk per Kategori</h3>
+      <div id="chart-cat" class="space-y-2"></div>
+    </div>
+    <!-- Allergen chart -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-4">
+      <h3 class="font-semibold text-sm text-gray-600 mb-3">Alergen Terdeteksi</h3>
+      <div id="chart-allergen" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- Product table -->
+  <div class="bg-white rounded-2xl border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-sm text-gray-600">Daftar Produk</h3>
+      <button onclick="setTab('products')" class="text-xs text-brand-600 hover:underline font-medium">Lihat semua &rarr;</button>
+    </div>
+    <div id="dash-product-table"></div>
+  </div>
+</section>
+
+<!-- ══ TAB: UPLOAD ════════════════════════════════════════════════════════════ -->
+<section id="section-upload" class="tab-section fade-in hidden">
+  <h2 class="text-xl font-bold mb-5">Upload Dokumen Menu</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Form -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-5">
+      <form id="upload-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Nama Seller <span class="text-red-500">*</span></label>
+          <input id="seller-name" type="text" placeholder="cth: Nippon Bento"
+            class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">File Dokumen <span class="text-red-500">*</span></label>
+          <div id="drop-zone"
+            class="border-2 border-dashed border-gray-300 rounded-xl p-7 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-colors"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="event.preventDefault();this.classList.add('border-brand-500','bg-brand-50')"
+            ondragleave="this.classList.remove('border-brand-500','bg-brand-50')"
+            ondrop="handleDrop(event)">
+            <div class="text-3xl mb-2">&#x1F4CE;</div>
+            <p class="text-sm text-gray-500">Drag & drop atau <span class="text-brand-600 font-medium">klik browse</span></p>
+            <p class="text-xs text-gray-400 mt-1">.txt, .pdf, .md, .csv &mdash; maks 5 MB</p>
+            <p id="file-label" class="mt-2 text-sm font-semibold text-brand-600 hidden"></p>
+          </div>
+          <input id="file-input" type="file" accept=".txt,.pdf,.md,.csv" class="hidden" onchange="handleFileSelect(this)" />
+        </div>
+        <button type="submit" id="upload-btn"
+          class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-60">
+          <span id="upload-btn-text">Upload &amp; Proses</span>
+          <span id="upload-spinner" class="spinner hidden" style="border-color:#fed7aa;border-top-color:#fff"></span>
+        </button>
+      </form>
+    </div>
+
+    <div class="space-y-4">
+      <!-- Upload result -->
+      <div id="upload-result" class="hidden bg-white rounded-2xl border border-gray-200 p-5">
+        <h3 class="font-semibold mb-3 text-gray-700">Hasil Proses</h3>
+        <div id="upload-result-body"></div>
+      </div>
+
+      <!-- Extracted JSON preview -->
+      <div id="extract-preview" class="hidden bg-white rounded-2xl border border-gray-200 p-5">
+        <h3 class="font-semibold mb-2 text-gray-700 text-sm">Extracted JSON Preview</h3>
+        <pre id="extract-json" class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-700 overflow-auto max-h-64"></pre>
+      </div>
+
+      <!-- Format guide -->
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+        <h3 class="font-semibold text-amber-800 text-sm mb-2">Format Dokumen yang Didukung</h3>
+        <p class="text-xs text-amber-700 mb-2">Setiap baris = satu produk. Pemisah: <code class="bg-amber-100 px-1 rounded">|</code> atau <code class="bg-amber-100 px-1 rounded">;</code></p>
+        <pre class="bg-amber-100 rounded-lg p-3 text-xs text-amber-900 overflow-x-auto leading-relaxed">Chicken Katsu Bento | Rp35.000 | Bahan: ayam, tepung panko, telur | Kategori: Bento | PO: Jumat
+Salmon Teriyaki | 48000 | Bahan: salmon, kecap teriyaki, nasi | Kategori: Bento | PO: Jumat
+Matcha Mochi | Rp15.000 | Bahan: tepung ketan, matcha | Kategori: Dessert | PO: Sabtu</pre>
+        <p class="text-xs text-amber-600 mt-2">Field wajib: Nama, Harga, Bahan, Kategori, PO &mdash; item tanpa field lengkap akan ditandai <strong>needs_review</strong>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TAB: PRODUCTS ══════════════════════════════════════════════════════════ -->
+<section id="section-products" class="tab-section fade-in hidden">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+    <h2 class="text-xl font-bold">Katalog Produk</h2>
+    <div class="flex flex-wrap gap-2">
+      <input id="search-input" type="text" placeholder="Cari produk / bahan..."
+        class="px-3 py-1.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 w-44"
+        oninput="debouncedLoad()" />
+      <select id="filter-seller" onchange="loadProducts()"
+        class="px-3 py-1.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+        <option value="">Semua Seller</option>
+      </select>
+      <select id="filter-cat" onchange="loadProducts()"
+        class="px-3 py-1.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+        <option value="">Semua Kategori</option>
+        <option>Bento</option><option>Dessert</option><option>Drink</option><option>Snack</option><option>Lainnya</option>
+      </select>
+      <select id="filter-status" onchange="loadProducts()"
+        class="px-3 py-1.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+        <option value="">Semua Status</option>
+        <option value="ok">OK</option>
+        <option value="needs_review">Needs Review</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="col-span-full flex justify-center py-12"><div class="spinner"></div></div>
+  </div>
+  <div id="products-empty" class="hidden text-center py-16 text-gray-400">
+    <div class="text-5xl mb-2">&#x1F37D;&#xFE0F;</div>
+    <p class="text-base font-medium">Belum ada produk</p>
+    <p class="text-sm mt-1">Upload dokumen menu untuk memulai</p>
+  </div>
+</section>
+
+<!-- ══ TAB: CHAT ══════════════════════════════════════════════════════════════ -->
+<section id="section-chat" class="tab-section fade-in hidden">
+  <div class="max-w-2xl mx-auto">
+    <h2 class="text-xl font-bold mb-1">Chatbot Buyer</h2>
+    <p class="text-sm text-gray-500 mb-4">Tanyakan tentang menu, harga, bahan, atau alergen. Jawaban hanya dari database.</p>
+
+    <div id="chat-window"
+      class="bg-white rounded-2xl border border-gray-200 h-[420px] overflow-y-auto p-4 flex flex-col gap-3 mb-3">
+      <!-- Welcome bubble -->
+      <div class="flex justify-start">
+        <div class="chat-msg bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-gray-800">
+          <p>Halo! Saya asisten DishUp. Silakan tanya tentang menu, harga, bahan, atau alergen produk kami.</p>
+          <p class="text-xs text-gray-400 mt-1 italic">Contoh: "Apakah Chicken Katsu mengandung gluten?", "Harga Salmon Teriyaki Bento?"</p>
+          <span class="badge bg-blue-100 text-blue-600 mt-2">This message is AI Generated</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="flex flex-wrap gap-2 mb-3" id="suggestions">
+      <button class="suggestion-btn px-3 py-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs rounded-full hover:bg-brand-100 transition-colors"
+        onclick="sendSuggestion(this)">Apakah ada menu gluten-free?</button>
+      <button class="suggestion-btn px-3 py-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs rounded-full hover:bg-brand-100 transition-colors"
+        onclick="sendSuggestion(this)">Harga Chicken Katsu Bento berapa?</button>
+      <button class="suggestion-btn px-3 py-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs rounded-full hover:bg-brand-100 transition-colors"
+        onclick="sendSuggestion(this)">Bahannya Salmon Teriyaki apa saja?</button>
+      <button class="suggestion-btn px-3 py-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs rounded-full hover:bg-brand-100 transition-colors"
+        onclick="sendSuggestion(this)">Menu pre-order hari Jumat apa saja?</button>
+    </div>
+
+    <!-- Input -->
+    <div class="flex gap-2">
+      <input id="chat-input" type="text" placeholder="Ketik pertanyaan Anda..."
+        class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+        onkeydown="if(event.key==='Enter')sendChat()" />
+      <button onclick="sendChat()" id="chat-send"
+        class="bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+        <span id="chat-send-text">Kirim</span>
+        <span id="chat-spinner" class="spinner hidden" style="border-color:#fed7aa;border-top-color:#fff;width:16px;height:16px"></span>
+      </button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ═══ PRODUCT MODAL ════════════════════════════════════════════════════════ -->
+<div id="prod-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative fade-in overflow-y-auto max-h-[90vh]">
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-lg leading-none">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ═══ SCRIPTS ══════════════════════════════════════════════════════════════ -->
+<script>
+const API = '';
+let selectedFile = null;
+let debounce = null;
+
+// ── TAB NAV ──────────────────────────────────────────────────────────────────
+function setTab(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('bg-brand-100','text-brand-700','font-semibold'));
+  const sec = document.getElementById('section-' + name);
+  sec.classList.remove('hidden');
+  sec.classList.add('fade-in');
+  document.getElementById('tab-' + name).classList.add('bg-brand-100','text-brand-700','font-semibold');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'products')  { loadSellers(); loadProducts(); }
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  const clr = { success:'bg-green-600', error:'bg-red-600', info:'bg-blue-600' };
+  el.className = 'fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg fade-in max-w-xs ' + (clr[type]||clr.info);
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(API + path, opts);
+  if (!res.ok) { const b = await res.json().catch(() => ({})); throw new Error(b.error || 'HTTP ' + res.status); }
+  return res.json();
+}
+
+// ── FILE ──────────────────────────────────────────────────────────────────────
+function handleFileSelect(input) { if (input.files[0]) setFile(input.files[0]); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('border-brand-500','bg-brand-50');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+}
+function setFile(f) {
+  selectedFile = f;
+  const lb = document.getElementById('file-label');
+  lb.textContent = f.name + '  (' + (f.size/1024).toFixed(1) + ' KB)';
+  lb.classList.remove('hidden');
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────────────────────
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const seller = document.getElementById('seller-name').value.trim();
+  if (!seller) { toast('Masukkan nama seller', 'error'); return; }
+  if (!selectedFile) { toast('Pilih file dokumen', 'error'); return; }
+
+  const btn = document.getElementById('upload-btn');
+  const spinner = document.getElementById('upload-spinner');
+  const txt = document.getElementById('upload-btn-text');
+  btn.disabled = true; txt.textContent = 'Memproses...'; spinner.classList.remove('hidden');
+
+  try {
+    const fd = new FormData();
+    fd.append('seller_name', seller);
+    fd.append('file', selectedFile);
+    const r = await apiFetch('/api/upload', { method:'POST', body:fd });
+    showUploadResult(r);
+    toast('Berhasil: ' + r.rows_inserted + ' produk disimpan');
+  } catch(err) {
+    toast('Upload gagal: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false; txt.textContent = 'Upload & Proses'; spinner.classList.add('hidden');
+  }
+});
+
+function showUploadResult(r) {
+  document.getElementById('upload-result').classList.remove('hidden');
+  document.getElementById('upload-result-body').innerHTML =
+    '<div class="grid grid-cols-2 gap-2">' +
+    statBox('Diparsing', r.rows_parsed, 'blue') +
+    statBox('Tersimpan', r.rows_inserted, 'green') +
+    statBox('Duplikat', r.rows_duplicate, 'yellow') +
+    statBox('Needs Review', r.rows_needs_review, 'amber') +
+    statBox('Error', r.rows_error, 'red') +
+    '</div>' +
+    '<p class="text-xs text-gray-400 mt-2">Log #' + r.log_id + ' | Seller #' + r.seller_id + '</p>';
+
+  // Show extracted JSON preview
+  apiFetch('/api/products?seller_id=' + r.seller_id).then(products => {
+    const preview = products.slice(0, r.rows_inserted).map(p => ({
+      name: p.name, price: p.price, category: p.category,
+      ingredients: p.ingredients, allergens: p.allergens,
+      po_days: p.po_days, review_status: p.review_status
+    }));
+    document.getElementById('extract-preview').classList.remove('hidden');
+    document.getElementById('extract-json').textContent = JSON.stringify(preview, null, 2);
+  }).catch(() => {});
+}
+function statBox(label, val, color) {
+  const c = {
+    blue:'bg-blue-50 border-blue-200 text-blue-700',
+    green:'bg-green-50 border-green-200 text-green-700',
+    yellow:'bg-yellow-50 border-yellow-200 text-yellow-700',
+    amber:'bg-amber-50 border-amber-200 text-amber-700',
+    red:'bg-red-50 border-red-200 text-red-700'
+  };
+  return '<div class="border rounded-xl p-3 text-center ' + (c[color]||c.blue) + '">' +
+    '<div class="text-xl font-bold">' + (val||0) + '</div><div class="text-xs mt-0.5">' + label + '</div></div>';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const s = await apiFetch('/api/stats');
+    document.getElementById('stat-total').textContent   = s.total_products;
+    document.getElementById('stat-review').textContent  = s.needs_review;
+    document.getElementById('stat-sellers').textContent = s.total_sellers;
+    document.getElementById('stat-uploads').textContent = s.total_uploads;
+
+    // Review alert
+    if (s.needs_review > 0) {
+      document.getElementById('review-alert').classList.remove('hidden');
+      document.getElementById('review-count').textContent = s.needs_review;
+    }
+
+    // Category bar chart
+    renderBarChart('chart-cat', s.by_category, 'category', 'cnt', '#f97316');
+    // Allergen bar chart
+    renderBarChart('chart-allergen', s.by_allergen, 'allergen', 'cnt', '#7c3aed');
+  } catch(e) { console.error(e); }
+
+  // Product table
+  try {
+    const products = await apiFetch('/api/products');
+    const wrap = document.getElementById('dash-product-table');
+    if (!products.length) { wrap.innerHTML = '<p class="text-gray-400 text-sm">Belum ada produk.</p>'; return; }
+    wrap.innerHTML = '<div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-gray-500 border-b text-xs">' +
+      '<th class="pb-2 pr-3">Nama</th><th class="pb-2 pr-3">Harga</th><th class="pb-2 pr-3">Kategori</th>' +
+      '<th class="pb-2 pr-3">Alergen</th><th class="pb-2 pr-3">PO</th><th class="pb-2">Status</th>' +
+      '</tr></thead><tbody>' +
+      products.slice(0,10).map(p =>
+        '<tr class="border-b border-gray-50 hover:bg-gray-50">' +
+        '<td class="py-2 pr-3 font-medium">' + esc(p.name) + '</td>' +
+        '<td class="py-2 pr-3 text-brand-600 font-semibold">' + fmtPrice(p.price) + '</td>' +
+        '<td class="py-2 pr-3">' + catBadge(p.category) + '</td>' +
+        '<td class="py-2 pr-3 text-xs text-gray-500">' + (p.allergens||[]).join(', ') + '</td>' +
+        '<td class="py-2 pr-3 text-xs">' + (p.po_days||[]).join(', ') + '</td>' +
+        '<td class="py-2">' + statusBadge(p.review_status) + '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div>';
+  } catch(e) { console.error(e); }
+}
+
+function renderBarChart(containerId, data, labelKey, valKey, color) {
+  const el = document.getElementById(containerId);
+  if (!data || !data.length) { el.innerHTML = '<p class="text-xs text-gray-400">Tidak ada data</p>'; return; }
+  const max = Math.max(...data.map(d => d[valKey]));
+  el.innerHTML = data.map(d => {
+    const pct = max ? Math.round((d[valKey]/max)*100) : 0;
+    return '<div class="flex items-center gap-2 text-sm">' +
+      '<span class="w-28 text-xs text-gray-600 truncate">' + esc(d[labelKey]) + '</span>' +
+      '<div class="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">' +
+        '<div class="h-4 rounded-full transition-all" style="width:' + pct + '%;background:' + color + '"></div>' +
+      '</div>' +
+      '<span class="text-xs font-semibold text-gray-700 w-6 text-right">' + d[valKey] + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+// ── PRODUCTS ──────────────────────────────────────────────────────────────────
+async function loadSellers() {
+  try {
+    const sellers = await apiFetch('/api/sellers');
+    const sel = document.getElementById('filter-seller');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Semua Seller</option>' +
+      sellers.map(s => '<option value="' + s.id + '"' + (s.id==cur?' selected':'') + '>' + esc(s.name) + '</option>').join('');
+  } catch(e) {}
+}
+
+function filterStatus(val) {
+  document.getElementById('filter-status').value = val;
+  loadProducts();
+}
+
+async function loadProducts() {
+  const grid = document.getElementById('products-grid');
+  const empty = document.getElementById('products-empty');
+  grid.innerHTML = '<div class="col-span-full flex justify-center py-12"><div class="spinner"></div></div>';
+  empty.classList.add('hidden');
+  const p = new URLSearchParams();
+  const seller = document.getElementById('filter-seller').value;
+  const cat    = document.getElementById('filter-cat').value;
+  const status = document.getElementById('filter-status').value;
+  const search = document.getElementById('search-input').value.trim();
+  if (seller) p.set('seller_id', seller);
+  if (cat)    p.set('category', cat);
+  if (status) p.set('status', status);
+  if (search) p.set('search', search);
+  try {
+    const prods = await apiFetch('/api/products?' + p);
+    if (!prods.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    grid.innerHTML = prods.map(productCard).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="col-span-full text-center text-red-500 py-8">Gagal memuat: ' + esc(e.message) + '</div>';
+  }
+}
+
+function debouncedLoad() { clearTimeout(debounce); debounce = setTimeout(loadProducts, 280); }
+
+function productCard(p) {
+  const needsReview = p.review_status === 'needs_review';
+  const avail = p.is_available;
+  return '<div class="bg-white rounded-2xl border ' + (needsReview ? 'border-amber-300' : 'border-gray-200') + ' p-4 hover:shadow-md transition-shadow cursor-pointer fade-in' + (!avail ? ' opacity-60' : '') + '" onclick="openModal(' + p.id + ')">' +
+    '<div class="flex items-start justify-between mb-2 gap-2">' +
+      '<h3 class="font-semibold text-sm leading-tight">' + esc(p.name) + '</h3>' +
+      statusBadge(p.review_status) +
+    '</div>' +
+    (needsReview ? '<div class="text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mb-2">Perlu verifikasi: ' + esc((p.review_reasons||[]).join(', ')) + '</div>' : '') +
+    '<div class="text-brand-600 font-bold text-lg mb-2">' + fmtPrice(p.price) + '</div>' +
+    '<div class="flex flex-wrap gap-1 mb-2">' + catBadge(p.category) + ' ' + (p.po_days||[]).map(d => poBadge(d)).join(' ') + '</div>' +
+    ((p.allergens||[]).length ? '<div class="text-xs text-red-600 mb-2">Alergen: ' + p.allergens.join(', ') + '</div>' : '') +
+    '<p class="text-xs text-gray-500 truncate mb-3">Bahan: ' + esc((p.ingredients||[]).join(', ')) + '</p>' +
+    '<div class="flex items-center justify-between pt-2 border-t border-gray-100">' +
+      '<span class="text-xs text-gray-400">' + esc(p.seller_name) + '</span>' +
+      '<div class="flex gap-1" onclick="event.stopPropagation()">' +
+        '<button onclick="toggleProduct(' + p.id + ')" title="Toggle" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 text-sm">' + (avail ? '&#x1F515;' : '&#x1F514;') + '</button>' +
+        '<button onclick="deleteProduct(' + p.id + ')" title="Hapus" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 text-sm">&#x1F5D1;&#xFE0F;</button>' +
+      '</div>' +
+    '</div></div>';
+}
+
+async function openModal(id) {
+  try {
+    const prods = await apiFetch('/api/products');
+    const p = prods.find(x => x.id === id);
+    if (!p) return;
+    const needsReview = p.review_status === 'needs_review';
+    document.getElementById('modal-content').innerHTML =
+      '<div class="flex flex-wrap gap-1 mb-2">' + catBadge(p.category) + ' ' + statusBadge(p.review_status) + '</div>' +
+      '<h2 class="text-xl font-bold mb-1">' + esc(p.name) + '</h2>' +
+      '<p class="text-brand-600 font-bold text-2xl mb-4">' + fmtPrice(p.price) + '</p>' +
+      (needsReview ? '<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-sm text-amber-800"><strong>Perlu Verifikasi:</strong> ' + esc((p.review_reasons||[]).join(', ')) + '</div>' : '') +
+      '<div class="space-y-2 text-sm">' +
+        row('Bahan', (p.ingredients||[]).join(', ') || '—') +
+        row('Alergen', (p.allergens||[]).length ? '<span class="text-red-600 font-medium">' + p.allergens.join(', ') + '</span>' : 'Tidak ada') +
+        row('Hari PO', (p.po_days||[]).join(', ') || '—') +
+        row('Seller', esc(p.seller_name)) +
+        row('Status', '<span class="' + (p.is_available ? 'text-green-600' : 'text-gray-400') + '">' + (p.is_available ? 'Tersedia' : 'Nonaktif') + '</span>') +
+        row('Dibuat', fmtDate(p.created_at)) +
+      '</div>' +
+      '<div class="flex gap-2 mt-5">' +
+        '<button onclick="toggleProduct(' + p.id + ');closeModal()" class="flex-1 py-2 rounded-xl border border-gray-300 text-sm font-medium hover:bg-gray-50">' + (p.is_available ? 'Nonaktifkan' : 'Aktifkan') + '</button>' +
+        '<button onclick="deleteProduct(' + p.id + ');closeModal()" class="flex-1 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium">Hapus</button>' +
+      '</div>';
+    document.getElementById('prod-modal').classList.remove('hidden');
+  } catch(e) { toast('Gagal memuat detail', 'error'); }
+}
+function closeModal() { document.getElementById('prod-modal').classList.add('hidden'); }
+document.getElementById('prod-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal(); });
+
+function row(label, val) {
+  return '<div class="flex gap-2"><span class="text-gray-400 w-20 shrink-0">' + label + '</span><span>' + val + '</span></div>';
+}
+
+async function toggleProduct(id) {
+  try { await apiFetch('/api/products/' + id + '/toggle', { method:'PATCH' }); loadProducts(); toast('Status diperbarui'); }
+  catch(e) { toast('Gagal: ' + e.message, 'error'); }
+}
+async function deleteProduct(id) {
+  if (!confirm('Hapus produk ini?')) return;
+  try { await apiFetch('/api/products/' + id, { method:'DELETE' }); loadProducts(); toast('Produk dihapus'); }
+  catch(e) { toast('Gagal: ' + e.message, 'error'); }
+}
+
+// ── CHATBOT ───────────────────────────────────────────────────────────────────
+function sendSuggestion(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  sendChat();
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+
+  // Append user bubble
+  appendBubble(q, 'user');
+
+  // Spinner state
+  const sendBtn = document.getElementById('chat-send');
+  const sendTxt = document.getElementById('chat-send-text');
+  const sendSpn = document.getElementById('chat-spinner');
+  sendBtn.disabled = true; sendTxt.textContent = '...'; sendSpn.classList.remove('hidden');
+
+  // Typing indicator
+  const typingId = appendTyping();
+
+  try {
+    const res = await apiFetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ question: q })
+    });
+    removeTyping(typingId);
+    appendBubble(res.answer, 'bot', res.used_ai);
+  } catch(e) {
+    removeTyping(typingId);
+    appendBubble('Maaf, terjadi kesalahan: ' + e.message, 'bot', false);
+  } finally {
+    sendBtn.disabled = false; sendTxt.textContent = 'Kirim'; sendSpn.classList.add('hidden');
+  }
+}
+
+function appendBubble(text, role, usedAi) {
+  const win = document.getElementById('chat-window');
+  const isBot = role === 'bot';
+  const div = document.createElement('div');
+  div.className = 'flex ' + (isBot ? 'justify-start' : 'justify-end') + ' fade-in';
+
+  // Simple markdown: **bold** and line breaks
+  const formatted = esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br/>');
+
+  div.innerHTML = '<div class="chat-msg ' +
+    (isBot ? 'bg-gray-100 rounded-2xl rounded-tl-sm text-gray-800' : 'bg-brand-500 rounded-2xl rounded-tr-sm text-white') +
+    ' px-4 py-3 text-sm">' +
+    '<div>' + formatted + '</div>' +
+    (isBot ? '<span class="badge bg-blue-100 text-blue-600 mt-2">This message is AI Generated</span>' : '') +
+    '</div>';
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+let _typingCounter = 0;
+function appendTyping() {
+  const id = 'typing-' + (++_typingCounter);
+  const win = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'flex justify-start fade-in';
+  div.innerHTML = '<div class="bg-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1">' +
+    '<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>' +
+    '<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>' +
+    '<span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>' +
+    '</div>';
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+  return id;
+}
+function removeTyping(id) { document.getElementById(id)?.remove(); }
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtPrice(p) { return p ? 'Rp' + Number(p).toLocaleString('id-ID') : 'Harga belum tersedia'; }
+function fmtDate(s) { return s ? new Date(s).toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'}) : '—'; }
+
+const CAT_CLR = {Bento:'bg-orange-100 text-orange-700',Dessert:'bg-pink-100 text-pink-700',Drink:'bg-sky-100 text-sky-700',Snack:'bg-yellow-100 text-yellow-700'};
+const PO_CLR  = {Jumat:'bg-purple-100 text-purple-700',Sabtu:'bg-indigo-100 text-indigo-700',Minggu:'bg-red-100 text-red-700'};
+function catBadge(c) { return '<span class="badge ' + (CAT_CLR[c]||'bg-gray-100 text-gray-600') + '">' + esc(c||'—') + '</span>'; }
+function poBadge(d)  { return '<span class="badge ' + (PO_CLR[d] ||'bg-teal-100 text-teal-700') + '">PO ' + esc(d) + '</span>'; }
+function statusBadge(s) {
+  return '<span class="badge ' + (s==='ok' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700') + '">' +
+    (s==='ok' ? 'OK' : 'needs_review') + '</span>';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+setTab('dashboard');
+</script>
+</body>
+</html>

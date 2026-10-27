@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="DishUp Menu Intelligence — Document to Database AI untuk platform pre-order makanan" />
+  <title>DishUp Menu Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+<div id="app-shell">
+
+<!-- =====================================================================
+     TOPBAR
+     ==================================================================== -->
+<header class="topbar" role="banner">
+  <div class="topbar__inner">
+    <div class="topbar__brand">
+      <div class="topbar__logo-box" aria-hidden="true">
+        <!-- Box / store icon -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="#1B2CC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="topbar__name">DishUp</span>
+    </div>
+    <button class="topbar__search-btn" aria-label="Cari" onclick="Tab.set('products')">
+      <!-- Search icon -->
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- =====================================================================
+     MAIN CONTENT
+     ==================================================================== -->
+<main class="main-content" role="main">
+
+<!-- ===================================================================
+     SECTION: DASHBOARD
+     =================================================================== -->
+<section id="section-dashboard" class="tab-section" aria-labelledby="dash-heading">
+  <h1 id="dash-heading" class="section-title">Dashboard</h1>
+
+  <!-- Stat cards 2-col grid -->
+  <div class="stat-grid" role="list" aria-label="Statistik produk">
+
+    <div class="stat-card" role="listitem">
+      <div class="stat-icon stat-icon--navy" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="#1B2CC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+      </div>
+      <div>
+        <div id="stat-total" class="stat-value">—</div>
+        <div class="stat-label">Total Produk</div>
+      </div>
+    </div>
+
+    <div class="stat-card" role="listitem">
+      <div class="stat-icon stat-icon--yellow" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div>
+        <div id="stat-review" class="stat-value stat-value--review">—</div>
+        <div class="stat-label">Needs Review</div>
+      </div>
+    </div>
+
+    <div class="stat-card" role="listitem">
+      <div class="stat-icon stat-icon--green" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <div id="stat-sellers" class="stat-value">—</div>
+        <div class="stat-label">Seller</div>
+      </div>
+    </div>
+
+    <div class="stat-card" role="listitem">
+      <div class="stat-icon stat-icon--blue" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div>
+        <div id="stat-uploads" class="stat-value">—</div>
+        <div class="stat-label">Upload Diproses</div>
+      </div>
+    </div>
+
+  </div><!-- /.stat-grid -->
+
+  <!-- Review alert -->
+  <div id="review-alert" class="review-alert hidden" role="alert" aria-live="polite">
+    <div class="review-alert__icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <div>
+      <p class="review-alert__title">Ada produk yang perlu diverifikasi</p>
+      <p class="review-alert__body">
+        <strong id="review-count">0</strong> produk berstatus <strong>needs_review</strong>
+        — bahan, harga, atau jadwal PO belum lengkap.
+        <button class="review-alert__link"
+          onclick="Tab.set('products'); Products.filterByStatus('needs_review')"
+          aria-label="Lihat produk yang perlu diverifikasi">
+          Lihat produk &rarr;
+        </button>
+      </p>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="card">
+    <h2 class="card__title">Produk per Kategori</h2>
+    <div id="chart-cat" class="bar-chart" aria-label="Grafik produk per kategori"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="card__title">Alergen Terdeteksi</h2>
+    <div id="chart-allergen" class="bar-chart" aria-label="Grafik alergen terdeteksi"></div>
+  </div>
+
+  <!-- Recent products table -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h2 class="card__title" style="margin-bottom:0">Daftar Produk</h2>
+      <button class="btn btn--ghost" style="height:32px;font-size:12px"
+        onclick="Tab.set('products')">Lihat semua &rarr;</button>
+    </div>
+    <div id="dash-product-table">
+      <div style="display:flex;justify-content:center;padding:20px">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+</section><!-- /#section-dashboard -->
+
+
+<!-- ===================================================================
+     SECTION: UPLOAD
+     =================================================================== -->
+<section id="section-upload" class="tab-section hidden" aria-labelledby="upload-heading">
+  <h1 id="upload-heading" class="section-title">Upload Dokumen Menu</h1>
+
+  <!-- Upload form card -->
+  <div class="card">
+    <form id="upload-form" novalidate>
+
+      <div class="form-group">
+        <label class="form-label" for="seller-name">
+          Nama Seller <span class="required" aria-label="wajib diisi">*</span>
+        </label>
+        <input
+          id="seller-name"
+          type="text"
+          class="form-input"
+          placeholder="cth: Nippon Bento"
+          autocomplete="organization"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="file-input">
+          File Dokumen <span class="required" aria-label="wajib diisi">*</span>
+        </label>
+        <div
+          id="drop-zone"
+          class="drop-zone"
+          role="button"
+          tabindex="0"
+          aria-label="Klik atau seret file ke sini"
+          onclick="document.getElementById('file-input').click()"
+          onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('file-input').click()"
+        >
+          <div class="drop-zone__icon" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="#1B2CC1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 16 12 12 8 16"/>
+              <line x1="12" y1="12" x2="12" y2="21"/>
+              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+            </svg>
+          </div>
+          <p class="drop-zone__cta">
+            Seret &amp; letakkan file, atau <strong>klik untuk browse</strong>
+          </p>
+          <p class="drop-zone__hint">.txt &bull; .pdf &bull; .md &bull; .csv — maks 5 MB</p>
+          <p id="file-label" class="drop-zone__filename hidden"></p>
+        </div>
+        <input
+          id="file-input"
+          type="file"
+          accept=".txt,.pdf,.md,.csv"
+          class="sr-only"
+          aria-label="Pilih file dokumen menu"
+        />
+      </div>
+
+      <button type="submit" id="upload-btn" class="btn btn--primary btn--full">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true">
+          <polyline points="16 16 12 12 8 16"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+        <span id="upload-btn-text">+ Upload New Product</span>
+        <span id="upload-spinner" class="spinner spinner--sm hidden" aria-hidden="true" style="border-color:rgba(255,255,255,.3);border-top-color:#fff"></span>
+      </button>
+
+    </form>
+  </div>
+
+  <!-- Upload result counters -->
+  <div id="upload-result" class="card hidden">
+    <h2 class="card__title">Hasil Proses</h2>
+    <div id="upload-result-body"></div>
+  </div>
+
+  <!-- JSON preview -->
+  <div id="extract-preview" class="card hidden">
+    <h2 class="card__title">Extracted JSON Preview</h2>
+    <pre id="extract-json" class="json-preview" aria-label="JSON hasil ekstraksi"></pre>
+  </div>
+
+  <!-- Format guide -->
+  <div class="format-guide">
+    <h2 class="format-guide__title">Format Dokumen yang Didukung</h2>
+    <p class="format-guide__hint">
+      Setiap baris = satu produk. Pemisah: <code>|</code> atau <code>;</code>
+    </p>
+    <pre>Chicken Katsu Bento | Rp35.000 | Bahan: ayam, tepung panko, telur | Kategori: Bento | PO: Jumat
+Salmon Teriyaki     | 48000   | Bahan: salmon, kecap teriyaki   | Kategori: Bento | PO: Jumat
+Matcha Mochi        | Rp15.000| Bahan: tepung ketan, matcha     | Kategori: Dessert| PO: Sabtu</pre>
+    <p class="format-guide__note">
+      Field wajib: Nama, Harga, Bahan, Kategori, PO.
+      Item dengan field tidak lengkap ditandai <strong>needs_review</strong>.
+      PDF didukung (butuh <code>pip install pypdf</code>).
+    </p>
+  </div>
+
+</section><!-- /#section-upload -->
+
+
+<!-- ===================================================================
+     SECTION: PRODUCTS
+     =================================================================== -->
+<section id="section-products" class="tab-section hidden" aria-labelledby="products-heading">
+  <h1 id="products-heading" class="section-title">Katalog Produk</h1>
+
+  <!-- Search bar -->
+  <div class="search-bar" role="search">
+    <span class="search-bar__icon" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </span>
+    <input
+      id="search-input"
+      type="search"
+      placeholder="Cari produk atau bahan..."
+      aria-label="Cari produk atau bahan"
+      oninput="Products.debouncedLoad()"
+    />
+  </div>
+
+  <!-- Filter dropdowns -->
+  <div class="filters-row" aria-label="Filter produk">
+    <select id="filter-seller" class="filter-select" onchange="Products.load()"
+      aria-label="Filter berdasarkan seller">
+      <option value="">Semua Seller</option>
+    </select>
+    <select id="filter-cat" class="filter-select" onchange="Products.load()"
+      aria-label="Filter berdasarkan kategori">
+      <option value="">Semua Kategori</option>
+      <option>Bento</option>
+      <option>Dessert</option>
+      <option>Drink</option>
+      <option>Snack</option>
+      <option>Lainnya</option>
+    </select>
+    <select id="filter-status" class="filter-select" onchange="Products.load()"
+      aria-label="Filter berdasarkan status">
+      <option value="">Semua Status</option>
+      <option value="ok">OK</option>
+      <option value="needs_review">Needs Review</option>
+    </select>
+  </div>
+
+  <!-- Product list (vertical) -->
+  <div id="products-grid" class="products-list" role="list" aria-label="Daftar produk">
+    <div class="empty-state">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="products-empty" class="empty-state hidden" aria-live="polite">
+    <div class="empty-state__icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+    </div>
+    <div class="empty-state__title">Belum ada produk</div>
+    <div class="empty-state__body">Upload dokumen menu untuk mulai mengisi katalog</div>
+  </div>
+
+</section><!-- /#section-products -->
+
+
+</main>
+
+<!-- =====================================================================
+     BOTTOM NAVIGATION
+     ==================================================================== -->
+<nav class="bottom-nav" role="navigation" aria-label="Navigasi utama">
+
+  <button id="tab-dashboard" class="nav-tab is-active" onclick="Tab.set('dashboard')" aria-label="Dashboard">
+    <!-- BarChart2 -->
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="#9CA3AF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/>
+      <line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6"  y1="20" x2="6"  y2="14"/>
+    </svg>
+    <span>Dashboard</span>
+  </button>
+
+  <button id="tab-upload" class="nav-tab" onclick="Tab.set('upload')" aria-label="Upload">
+    <!-- Upload cloud -->
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="#9CA3AF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="16 16 12 12 8 16"/>
+      <line x1="12" y1="12" x2="12" y2="21"/>
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+    </svg>
+    <span>Upload</span>
+  </button>
+
+  <button id="tab-products" class="nav-tab" onclick="Tab.set('products')" aria-label="Produk">
+    <!-- Package -->
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="#9CA3AF" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+      <line x1="12" y1="22.08" x2="12" y2="12"/>
+    </svg>
+    <span>Produk</span>
+  </button>
+
+</nav>
+
+</div><!-- /#app-shell -->
+
+<!-- =====================================================================
+     PRODUCT DETAIL MODAL (bottom sheet)
+     ==================================================================== -->
+<div
+  id="prod-modal"
+  class="modal-overlay hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-product-name"
+>
+  <div class="modal">
+    <div class="modal__handle" aria-hidden="true"></div>
+    <button class="modal__close" onclick="Modal.close()"
+      aria-label="Tutup modal">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

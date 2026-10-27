@@ -1,0 +1,15 @@
+# data/menu_dengan_alergen.txt
+# Contoh dokumen menu dengan berbagai jenis alergen untuk pengujian
+# deteksi alergen otomatis. Satu baris per produk.
+
+Chicken Katsu Bento    | Rp35.000  | Bahan: ayam, tepung panko, telur, nasi, saus tonkatsu  | Kategori: Bento   | PO: Jumat
+Salmon Teriyaki Bento  | Rp48.000  | Bahan: salmon, kecap teriyaki, nasi, brokoli, wijen     | Kategori: Bento   | PO: Jumat
+Ebi Fry Bento          | Rp42.000  | Bahan: udang, tepung panko, telur, nasi                 | Kategori: Bento   | PO: Sabtu
+Matcha Mochi           | Rp15.000  | Bahan: tepung ketan, matcha, gula                       | Kategori: Dessert | PO: Sabtu
+Brownies Cokelat       | Rp18.000  | Bahan: tepung terigu, cokelat, mentega, telur, gula     | Kategori: Dessert | PO: Sabtu
+Thai Tea               | Rp15.000  | Bahan: teh thai, susu evaporasi, gula, es batu          | Kategori: Drink   | PO: Jumat
+Tahu Isi Pedas         | Rp10.000  | Bahan: tahu, wortel, kol, cabe, bihun                   | Kategori: Snack   | PO: Kamis
+Pisang Goreng Crispy   | Rp12.000  | Bahan: pisang, tepung crispy, minyak goreng             | Kategori: Snack   | PO: Kamis
+Gyoza Goreng           | Rp22.000  | Bahan: daging ayam, kubis, bawang putih, kulit gyoza   | Kategori: Snack   | PO: Jumat
+# Item berikut sengaja tidak lengkap untuk menguji mekanisme needs_review:
+Produk Misterius       | 0         | Bahan:                                                  | Kategori:         | PO:

@@ -1,0 +1,12 @@
+# data/menu_nippon_bento.txt
+# Contoh dokumen menu teks dari seller "Nippon Bento".
+# Format: Nama | Harga | Bahan: ... | Kategori: ... | PO: ...
+# Baris kosong dan baris dimulai # diabaikan parser.
+
+Chicken Katsu Bento  | Rp35.000 | Bahan: ayam, tepung panko, telur, nasi, saus tonkatsu | Kategori: Bento   | PO: Jumat
+Salmon Teriyaki Bento| 48000    | Bahan: salmon, kecap teriyaki, nasi, brokoli           | Kategori: Bento   | PO: Jumat
+Ebi Fry Bento        | Rp42.000 | Bahan: udang, tepung panko, telur, nasi                | Kategori: Bento   | PO: Sabtu
+Matcha Mochi         | Rp15.000 | Bahan: tepung ketan, matcha, gula                      | Kategori: Dessert | PO: Sabtu
+Gyoza Goreng         | 22000    | Bahan: daging ayam, kubis, bawang putih, kulit gyoza   | Kategori: Snack   | PO: Jumat
+# Baris berikut adalah duplikat dari baris ke-2 — akan diabaikan otomatis:
+Salmon Teriyaki Bento| 48000    | Bahan: salmon, kecap teriyaki, nasi, brokoli           | Kategori: Bento   | PO: Jumat
